@@ -16,3 +16,12 @@ export const uploadInvoiceSchema = z.object({
 export const invoiceIdParam = z.object({
   id: z.string().uuid(),
 });
+
+export const tokenizeSchema = z.object({
+  invoiceId: z.string().uuid(),
+});
+
+export const listInvoiceSchema = z.object({
+  invoiceId: z.string().uuid(),
+  askingPrice: z.coerce.number().positive(),
+});

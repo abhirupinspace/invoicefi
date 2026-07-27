@@ -1,9 +1,16 @@
-import { Invoice, InvoiceStatus, Prisma, Role } from '@prisma/client';
+import {
+  Invoice,
+  InvoiceStatus,
+  Prisma,
+  Role,
+  VerificationStatus,
+} from '@prisma/client';
 import { prisma } from '../database/prisma';
 import { env } from '../config/env';
 import { AUDIT_ACTIONS, SUPPORTED_CURRENCIES } from '../config/constants';
 import { AuthUser, ExtractedInvoiceFields } from '../types';
 import { sha256Buffer } from '../utils/hash';
+import { toMinorUnits } from '../utils/money';
 import {
   BadRequestError,
   ConflictError,
@@ -15,6 +22,7 @@ import { ocrService } from './ocr';
 import { aiService } from './ai.service';
 import { fraudService } from './fraud.service';
 import { auditService } from './audit.service';
+import { blockchainService } from './blockchain.service';
 
 // Fields a client may declare on upload to override or supplement OCR output.
 export interface InvoiceOverrides {
@@ -185,6 +193,43 @@ export class InvoiceService {
     });
 
     return invoice;
+  }
+
+  // Mints the on chain invoice NFT for a verified invoice. Only the owner or an
+  // admin may tokenize, and only once the invoice has been verified.
+  async tokenize(actor: AuthUser, invoiceId: string): Promise<Invoice> {
+    const invoice = await this.getById(actor, invoiceId);
+    if (actor.role !== Role.ADMIN && invoice.sellerId !== actor.id) {
+      throw new ForbiddenError('Only the invoice owner can tokenize it');
+    }
+    if (invoice.verificationStatus !== VerificationStatus.VERIFIED) {
+      throw new BadRequestError('Invoice must be verified before tokenization');
+    }
+    if (invoice.tokenId) {
+      throw new ConflictError('Invoice is already tokenized');
+    }
+
+    const result = await blockchainService.mintInvoice({
+      invoiceId: invoice.id,
+      faceValue: toMinorUnits(invoice.amount),
+      dueDate: Math.floor(invoice.dueDate.getTime() / 1000),
+      verified: true,
+      hash: Buffer.from(invoice.invoiceHash, 'hex'),
+    });
+
+    const updated = await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { tokenId: result.value ?? null, status: InvoiceStatus.MINTED },
+    });
+
+    await auditService.log(AUDIT_ACTIONS.INVOICE_MINT, actor.id, {
+      invoiceId: invoice.id,
+      tokenId: result.value,
+      txHash: result.txHash,
+      dryRun: result.dryRun,
+    });
+
+    return updated;
   }
 
   async list(actor: AuthUser): Promise<Invoice[]> {

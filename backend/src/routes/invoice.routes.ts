@@ -8,6 +8,8 @@ import { validate } from '../middleware/validate';
 import { asyncHandler } from '../utils/asyncHandler';
 import {
   invoiceIdParam,
+  listInvoiceSchema,
+  tokenizeSchema,
   uploadInvoiceSchema,
 } from '../validators/invoice.validators';
 
@@ -53,6 +55,60 @@ invoiceRouter.post(
   uploadPdf,
   validate({ body: uploadInvoiceSchema }),
   asyncHandler((req, res) => invoiceController.upload(req, res)),
+);
+
+/**
+ * @openapi
+ * /invoice/tokenize:
+ *   post:
+ *     tags: [Invoice]
+ *     summary: Mint the on chain NFT for a verified invoice
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [invoiceId]
+ *             properties:
+ *               invoiceId: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: Invoice minted }
+ *       400: { description: Invoice not verified }
+ */
+invoiceRouter.post(
+  '/tokenize',
+  requireRole(Role.BUSINESS, Role.ADMIN),
+  validate({ body: tokenizeSchema }),
+  asyncHandler((req, res) => invoiceController.tokenize(req, res)),
+);
+
+/**
+ * @openapi
+ * /invoice/list:
+ *   post:
+ *     tags: [Invoice]
+ *     summary: List a minted invoice on the marketplace for funding
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [invoiceId, askingPrice]
+ *             properties:
+ *               invoiceId: { type: string, format: uuid }
+ *               askingPrice: { type: number }
+ *     responses:
+ *       201: { description: Listing created }
+ */
+invoiceRouter.post(
+  '/list',
+  requireRole(Role.BUSINESS, Role.ADMIN),
+  validate({ body: listInvoiceSchema }),
+  asyncHandler((req, res) => invoiceController.listForFunding(req, res)),
 );
 
 /**

@@ -63,6 +63,7 @@ CREATE TABLE "investments" (
     "purchasePrice" DECIMAL(18,2) NOT NULL,
     "expectedReturn" DECIMAL(18,2) NOT NULL,
     "status" "InvestmentStatus" NOT NULL DEFAULT 'ACTIVE',
+    "txHash" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "investments_pkey" PRIMARY KEY ("id")
@@ -74,6 +75,8 @@ CREATE TABLE "marketplace_listings" (
     "invoiceId" TEXT NOT NULL,
     "askingPrice" DECIMAL(18,2) NOT NULL,
     "status" "ListingStatus" NOT NULL DEFAULT 'ACTIVE',
+    "chainListingId" TEXT,
+    "txHash" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "marketplace_listings_pkey" PRIMARY KEY ("id")

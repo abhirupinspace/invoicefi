@@ -96,7 +96,7 @@ Express backend · Prisma schema+migrations · 3 Soroban contracts+tests · Open
 - [x] **P2 Auth + core middleware**: bcrypt, JWT, register/login/profile, RBAC, validate, audit skeleton. Verify: auth integration tests green.
 - [x] **P3 Invoice + storage + OCR + AI + fraud + pricing**: upload(multipart,sha256), StorageProvider, OcrService, AiService, FraudService, PricingService, lifecycle transitions. Verify: unit tests (mocked providers) + upload integration test.
 - [x] **P4 Soroban contracts**: invoice_nft, marketplace, settlement + Rust tests. Verify: `cargo test` all pass; `stellar contract build` succeeds.
-- [ ] **P5 BlockchainService + tokenize/marketplace/settlement wiring**: stellar-sdk invoke layer (contract IDs from env), tokenize→mint, list→marketplace.list, buy→buy, settle→settlement. Deploy script. Verify: service unit tests with SDK mocked; integration path documented.
+- [x] **P5 BlockchainService + tokenize/marketplace/settlement wiring**: stellar-sdk invoke layer (contract IDs from env), tokenize→mint, list→marketplace.list, buy→buy, settle→settlement. Deploy script. Verify: service unit tests with SDK mocked; integration path documented.
 - [ ] **P6 Portfolio + Admin + AI chat + pricing endpoints**. Verify: integration tests.
 - [ ] **P7 Swagger + Postman + seed + README + Docker + full test pass**. Verify: `docker compose up` boots api; `/docs` renders; seed populates; test suite green.
 

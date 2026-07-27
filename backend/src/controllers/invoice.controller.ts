@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { invoiceService } from '../services/invoice.service';
+import { marketplaceService } from '../services/marketplace.service';
 import { sendSuccess } from '../utils/apiResponse';
 import { BadRequestError } from '../utils/appError';
 
@@ -25,6 +26,16 @@ export class InvoiceController {
   async getOne(req: Request, res: Response): Promise<void> {
     const invoice = await invoiceService.getById(req.user!, req.params.id);
     sendSuccess(res, invoice);
+  }
+
+  async tokenize(req: Request, res: Response): Promise<void> {
+    const invoice = await invoiceService.tokenize(req.user!, req.body.invoiceId);
+    sendSuccess(res, invoice);
+  }
+
+  async listForFunding(req: Request, res: Response): Promise<void> {
+    const listing = await marketplaceService.list(req.user!, req.body);
+    sendSuccess(res, listing, 201);
   }
 }
 

@@ -102,6 +102,7 @@ model Investment {
   purchasePrice  Decimal          @db.Decimal(18, 2)
   expectedReturn Decimal          @db.Decimal(18, 2)
   status         InvestmentStatus @default(ACTIVE)
+  txHash         String?
   createdAt      DateTime         @default(now())
 
   @@index([investorId])
@@ -110,12 +111,14 @@ model Investment {
 }
 
 model MarketplaceListing {
-  id          String        @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
-  askingPrice Decimal       @db.Decimal(18, 2)
-  status      ListingStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
+  id             String        @id @default(uuid())
+  invoiceId      String
+  invoice        Invoice       @relation(fields: [invoiceId], references: [id])
+  askingPrice    Decimal       @db.Decimal(18, 2)
+  status         ListingStatus @default(ACTIVE)
+  chainListingId String?
+  txHash         String?
+  createdAt      DateTime      @default(now())
 
   @@index([status])
   @@map("marketplace_listings")
