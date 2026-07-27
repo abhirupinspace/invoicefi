@@ -122,7 +122,7 @@ Verified:
 - Production build (`npm run build`) compiles and keeps Swagger annotations in `dist`.
 - Init migration generated offline and regenerated after the chain-fields schema change.
 
-Not run here (environment limitation, not a code issue): live `docker compose up` boot with seed and a real HTTP smoke test. Docker Hub is unreachable from this machine right now (even `hello-world` will not pull), so images could not be fetched. The compose file, Dockerfile, migrations, and seed are complete; to run locally: `docker compose up --build` then `docker compose exec api npx prisma db seed`.
+Live boot verified: Docker Postgres up, `prisma migrate deploy` applied the init migration, seed loaded (30 invoices, 15 active listings, 10 investments, 5 settlements), API booted, and an HTTP smoke test passed end to end. `/health` ok, `/docs/` renders (200), `/openapi.json` exposes 24 paths, JWT login works, and the full lifecycle ran live on a seeded invoice: verify -> MINTED (dry run mint, tokenId assigned) -> priced -> LISTED -> bought by investor -> FUNDED -> settled -> CLOSED, with portfolio returns updating. (Docker Hub had been unreachable during the initial build; retried and it succeeded.)
 
 Design decisions of note:
 - Custodial MVP chain model: a single platform account signs and holds custody on chain; the DB is the source of truth for ownership. Production would use per user wallets and SEP 10.
