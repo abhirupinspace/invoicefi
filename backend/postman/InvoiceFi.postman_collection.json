@@ -1,0 +1,230 @@
+{
+  "info": {
+    "name": "InvoiceFi API",
+    "description": "AI powered tokenized invoice financing on Stellar Soroban. Set the baseUrl variable, then run Register or Login to capture a token automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "token", "value": "" },
+    { "key": "invoiceId", "value": "" },
+    { "key": "listingId", "value": "" },
+    { "key": "adminSecret", "value": "change_me_admin_bootstrap_secret" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register business",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) { pm.collectionVariables.set('token', res.data.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Ltd\",\n  \"email\": \"acme@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"BUSINESS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"ADMIN\",\n  \"adminSecret\": \"{{adminSecret}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) { pm.collectionVariables.set('token', res.data.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"acme@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Profile",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/profile" }
+        }
+      ]
+    },
+    {
+      "name": "Invoice",
+      "item": [
+        {
+          "name": "Upload invoice",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success) { pm.collectionVariables.set('invoiceId', res.data.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/invoice/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "invoiceNumber", "value": "INV-9001", "type": "text" },
+                { "key": "buyerName", "value": "Globex", "type": "text" },
+                { "key": "amount", "value": "10000", "type": "text" },
+                { "key": "currency", "value": "GBP", "type": "text" },
+                { "key": "issueDate", "value": "2026-01-01", "type": "text" },
+                { "key": "dueDate", "value": "2026-02-01", "type": "text" }
+              ]
+            }
+          }
+        },
+        { "name": "List my invoices", "request": { "method": "GET", "url": "{{baseUrl}}/invoice" } },
+        { "name": "Get invoice", "request": { "method": "GET", "url": "{{baseUrl}}/invoice/{{invoiceId}}" } },
+        {
+          "name": "Tokenize invoice",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/invoice/tokenize",
+            "body": { "mode": "raw", "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\"\n}" }
+          }
+        },
+        {
+          "name": "List invoice for funding",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/invoice/list",
+            "body": { "mode": "raw", "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"askingPrice\": 9600\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        { "name": "List all invoices", "request": { "method": "GET", "url": "{{baseUrl}}/admin/invoices" } },
+        { "name": "Verify invoice", "request": { "method": "POST", "url": "{{baseUrl}}/invoice/{{invoiceId}}/verify" } },
+        {
+          "name": "Reject invoice",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/invoice/{{invoiceId}}/reject",
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Suspected duplicate\"\n}" }
+          }
+        },
+        { "name": "Settle invoice", "request": { "method": "POST", "url": "{{baseUrl}}/invoice/{{invoiceId}}/settle" } }
+      ]
+    },
+    {
+      "name": "Marketplace",
+      "item": [
+        {
+          "name": "Browse listings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data.length) { pm.collectionVariables.set('listingId', res.data[0].id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": { "method": "GET", "url": "{{baseUrl}}/marketplace" }
+        },
+        { "name": "Get listing", "request": { "method": "GET", "url": "{{baseUrl}}/marketplace/{{listingId}}" } },
+        {
+          "name": "Buy listing",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/marketplace/buy",
+            "body": { "mode": "raw", "raw": "{\n  \"listingId\": \"{{listingId}}\"\n}" }
+          }
+        },
+        {
+          "name": "Cancel listing",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/marketplace/cancel",
+            "body": { "mode": "raw", "raw": "{\n  \"listingId\": \"{{listingId}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Portfolio",
+      "item": [
+        { "name": "Holdings", "request": { "method": "GET", "url": "{{baseUrl}}/portfolio" } },
+        { "name": "History", "request": { "method": "GET", "url": "{{baseUrl}}/portfolio/history" } },
+        { "name": "Returns", "request": { "method": "GET", "url": "{{baseUrl}}/portfolio/returns" } }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Query",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/ai/query",
+            "body": { "mode": "raw", "raw": "{\n  \"query\": \"What invoices are due this week?\"\n}" }
+          }
+        },
+        { "name": "Analyze invoice", "request": { "method": "POST", "url": "{{baseUrl}}/ai/analyze/{{invoiceId}}" } },
+        { "name": "Price invoice", "request": { "method": "GET", "url": "{{baseUrl}}/ai/price/{{invoiceId}}" } }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [{ "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health" } }]
+    }
+  ]
+}
