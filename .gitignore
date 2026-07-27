@@ -33,5 +33,6 @@ logs/
 # Test coverage
 coverage/
 
-# Rust
+# Rust (keep the contracts lockfile for reproducible builds)
 Cargo.lock
+!contracts/Cargo.lock
