@@ -17,12 +17,14 @@ import {
   ForbiddenError,
   NotFoundError,
 } from '../utils/appError';
+import { InvoiceAnalysis, PricingResult } from '../types';
 import { storage } from './storage';
 import { ocrService } from './ocr';
 import { aiService } from './ai.service';
 import { fraudService } from './fraud.service';
 import { auditService } from './audit.service';
 import { blockchainService } from './blockchain.service';
+import { pricingService } from './pricing.service';
 
 // Fields a client may declare on upload to override or supplement OCR output.
 export interface InvoiceOverrides {
@@ -265,6 +267,56 @@ export class InvoiceService {
 
   extractedOf(invoice: Invoice): ExtractedInvoiceFields {
     return (invoice.extracted as ExtractedInvoiceFields) ?? {};
+  }
+
+  // Re-runs AI analysis over a stored invoice and persists the fresh result.
+  async reanalyze(actor: AuthUser, id: string): Promise<InvoiceAnalysis> {
+    const invoice = await this.getById(actor, id);
+    const extracted = this.extractedOf(invoice);
+
+    const buyerSeenBefore =
+      (await prisma.invoice.count({
+        where: {
+          sellerId: invoice.sellerId,
+          buyerName: invoice.buyerName,
+          id: { not: invoice.id },
+        },
+      })) > 0;
+
+    const analysis = await aiService.analyzeInvoice({
+      invoiceNumber: invoice.invoiceNumber,
+      buyerName: invoice.buyerName,
+      vendor: extracted.vendor,
+      amount: Number(invoice.amount),
+      currency: invoice.currency,
+      issueDate: invoice.issueDate,
+      dueDate: invoice.dueDate,
+      paymentTerms: invoice.paymentTerms ?? undefined,
+      ocrConfidence: (invoice.analysis as { ocrConfidence?: number } | null)?.ocrConfidence ?? 0.7,
+      buyerSeenBefore,
+      hasTaxId: Boolean(extracted.vat),
+    });
+
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        riskScore: analysis.riskScore,
+        analysis: analysis as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    return analysis;
+  }
+
+  // Recommends a funding price for an invoice.
+  async priceFor(actor: AuthUser, id: string): Promise<PricingResult> {
+    const invoice = await this.getById(actor, id);
+    return pricingService.computeWithNarrative({
+      faceValue: Number(invoice.amount),
+      riskScore: invoice.riskScore ?? 50,
+      dueDate: invoice.dueDate,
+      currency: invoice.currency,
+    });
   }
 }
 

@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
+import { adminController } from '../controllers/admin.controller';
 import { invoiceController } from '../controllers/invoice.controller';
 import { authenticate } from '../middleware/auth';
 import { requireRole } from '../middleware/rbac';
 import { uploadPdf } from '../middleware/upload';
 import { validate } from '../middleware/validate';
 import { asyncHandler } from '../utils/asyncHandler';
+import { rejectSchema } from '../validators/ai.validators';
 import {
   invoiceIdParam,
   listInvoiceSchema,
@@ -124,6 +126,72 @@ invoiceRouter.post(
 invoiceRouter.get(
   '/',
   asyncHandler((req, res) => invoiceController.list(req, res)),
+);
+
+/**
+ * @openapi
+ * /invoice/{id}/verify:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Verify an invoice, which triggers on chain minting
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: Invoice verified and minted }
+ */
+invoiceRouter.post(
+  '/:id/verify',
+  requireRole(Role.ADMIN),
+  validate({ params: invoiceIdParam }),
+  asyncHandler((req, res) => adminController.verify(req, res)),
+);
+
+/**
+ * @openapi
+ * /invoice/{id}/reject:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Reject an invoice
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: Invoice rejected }
+ */
+invoiceRouter.post(
+  '/:id/reject',
+  requireRole(Role.ADMIN),
+  validate({ params: invoiceIdParam, body: rejectSchema }),
+  asyncHandler((req, res) => adminController.reject(req, res)),
+);
+
+/**
+ * @openapi
+ * /invoice/{id}/settle:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Settle a funded invoice, paying the investor and burning the NFT
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: Invoice settled and closed }
+ */
+invoiceRouter.post(
+  '/:id/settle',
+  requireRole(Role.ADMIN),
+  validate({ params: invoiceIdParam }),
+  asyncHandler((req, res) => adminController.settle(req, res)),
 );
 
 /**
