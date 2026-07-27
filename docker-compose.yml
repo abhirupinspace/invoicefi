@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: invoicefi_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: invoicefi
+      POSTGRES_PASSWORD: invoicefi
+      POSTGRES_DB: invoicefi
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invoicefi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: invoicefi_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: invoicefi_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://invoicefi:invoicefi@postgres:5432/invoicefi?schema=public
+      REDIS_URL: redis://redis:6379
+    env_file:
+      - .env
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/storage:/app/storage
+
+volumes:
+  pgdata:

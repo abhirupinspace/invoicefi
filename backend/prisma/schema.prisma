@@ -1,0 +1,133 @@
+// InvoiceFi data model.
+// See tasks/todo.md and README for the full lifecycle description.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUSINESS
+  INVESTOR
+  ADMIN
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UPLOADED
+  PARSED
+  NEEDS_REVIEW
+  VERIFIED
+  MINTED
+  LISTED
+  FUNDED
+  SETTLED
+  CLOSED
+  REJECTED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  SETTLED
+}
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role     @default(BUSINESS)
+  createdAt   DateTime @default(now())
+
+  invoices    Invoice[]    @relation("SellerInvoices")
+  investments Investment[]
+
+  @@map("users")
+}
+
+model Invoice {
+  id                 String             @id @default(uuid())
+  invoiceNumber      String             @unique
+  sellerId           String
+  seller             User               @relation("SellerInvoices", fields: [sellerId], references: [id])
+  buyerName          String
+  buyerEmail         String?
+  amount             Decimal            @db.Decimal(18, 2)
+  currency           String
+  issueDate          DateTime
+  dueDate            DateTime
+  paymentTerms       String?
+  status             InvoiceStatus      @default(DRAFT)
+  verificationStatus VerificationStatus @default(PENDING)
+  riskScore          Int?
+  fraudScore         Int?
+  invoiceHash        String             @unique
+  pdfPath            String?
+  tokenId            String?
+  extracted          Json?
+  analysis           Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  investments Investment[]
+  listings    MarketplaceListing[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model Investment {
+  id             String           @id @default(uuid())
+  invoiceId      String
+  invoice        Invoice          @relation(fields: [invoiceId], references: [id])
+  investorId     String
+  investor       User             @relation(fields: [investorId], references: [id])
+  purchasePrice  Decimal          @db.Decimal(18, 2)
+  expectedReturn Decimal          @db.Decimal(18, 2)
+  status         InvestmentStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+
+  @@index([investorId])
+  @@index([invoiceId])
+  @@map("investments")
+}
+
+model MarketplaceListing {
+  id          String        @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
+  askingPrice Decimal       @db.Decimal(18, 2)
+  status      ListingStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+
+  @@index([status])
+  @@map("marketplace_listings")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  actor     String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@map("audit_logs")
+}

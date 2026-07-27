@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Build output
+backend/dist/
+contracts/target/
+target/
+
+# Environment
+.env
+*.env
+!.env.example
+
+# Prisma
+backend/prisma/*.db
+
+# Uploaded files
+backend/storage/*
+!backend/storage/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+
+# Rust
+Cargo.lock
