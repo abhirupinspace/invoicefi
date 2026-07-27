@@ -92,7 +92,7 @@ Express backend · Prisma schema+migrations · 3 Soroban contracts+tests · Open
 ---
 
 ## Phases (checkpoint after each)
-- [ ] **P1 Scaffold**: repo, tsconfig, package.json, prisma schema, env(zod) config, app/server bootstrap, error/response utils, docker-compose, .env.example. Verify: `tsc` compiles, `docker compose up postgres` + `prisma migrate` works.
+- [x] **P1 Scaffold**: repo, tsconfig, package.json, prisma schema, env(zod) config, app/server bootstrap, error/response utils, docker-compose, .env.example. Verify: `tsc` compiles, `docker compose up postgres` + `prisma migrate` works.
 - [ ] **P2 Auth + core middleware**: bcrypt, JWT, register/login/profile, RBAC, validate, audit skeleton. Verify: auth integration tests green.
 - [ ] **P3 Invoice + storage + OCR + AI + fraud + pricing**: upload(multipart,sha256), StorageProvider, OcrService, AiService, FraudService, PricingService, lifecycle transitions. Verify: unit tests (mocked providers) + upload integration test.
 - [ ] **P4 Soroban contracts**: invoice_nft, marketplace, settlement + Rust tests. Verify: `cargo test` all pass; `stellar contract build` succeeds.

@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { sendSuccess } from '../utils/apiResponse';
+import { authRouter } from './auth.routes';
 
 // Aggregate router. Feature routers are mounted here as they are implemented in
-// later phases (auth, invoice, marketplace, portfolio, admin, ai).
+// later phases (invoice, marketplace, portfolio, admin, ai).
 export const apiRouter = Router();
+
+apiRouter.use('/auth', authRouter);
 
 /**
  * @openapi
